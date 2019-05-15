@@ -1,0 +1,49 @@
+
+
+const ttn = require("ttn")
+const fs = require("fs")
+
+console.log("Starting server...")
+
+//Insert appID and accesskey from thethingsnetwork application of your device
+const appID = "sodak1" // Change this to your app ID
+const accessKey = "ttn-account-v2.3wVwbE10ifTJEQ7S6O4K_QG6SHa-TXmx3-kpOOcmI-Q" // Change this to your access key
+
+let i = 0
+
+//Connect application server with appID and accesskey and loop
+ttn.data(appID, accessKey).then( function(client){
+    client.on("uplink", function (explorerboard, payload) {
+
+	//This if statement terminates the code when 20 metadata readings are obtained. Remove if and else statements to continue reading until code is termniated manually  
+        if (i >= 20) {
+            function alertTerminal() {
+                console.log("\007")
+            }
+            process.exit()
+        }
+        else {
+            let path = "data.txt"
+            let temp = JSON.stringify(payload.metadata.gateways)
+            let data = temp.slice(1, -1)
+
+	    /*This allows the JSON file to store multiple sets of readings from the gateways to be exported for analysis.
+	      This bit of code can be modified to write single sets of metadata for the matlab code to read and then deleted 
+	      when the next set is received. */
+            fs.appendFile(path, String(data) + ",", function (err, data) {
+                if (err) console.log('Error Reading File', err.messaeg, err.stack)
+                console.log("File successfully read")
+            })
+
+            i++
+
+            console.log("Received uplink from:", explorerboard)
+            console.log(data)
+        }
+    })
+})
+
+  .catch(function (error) {
+    console.error(error)
+    process.exit(1)
+  })
